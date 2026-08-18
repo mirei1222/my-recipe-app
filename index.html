@@ -209,11 +209,11 @@
 </nav>
 
 <script>
-// ⚠️ 본인의 Supabase URL과 anon key를 아래에 넣으세요
 const SUPABASE_URL = "https://gpphgtdvlcsmjymhhndq.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwcGhndGR2bGNzbWp5bWhobmRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDcwNjQsImV4cCI6MjEwMjYyMzA2NH0.ScwRnwp4OGtTSyhXqo1LQ6EnrTcINnLqXWZUALMAO24";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// 변수명을 db로 선언하여 스크립트 충돌을 방지합니다.
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- 탭 전환 ---
 document.querySelectorAll('nav.tabbar button').forEach(btn => {
@@ -228,13 +228,13 @@ document.querySelectorAll('nav.tabbar button').forEach(btn => {
 // --- 연결 상태 체크 ---
 async function checkConnection() {
   const statusEl = document.getElementById('status');
-  const { error } = await supabase.from('recipes').select('id').limit(1);
+  const { error } = await db.from('recipes').select('id').limit(1);
   statusEl.textContent = error ? '⚠️ 연결 실패' : '🟢 연결됨';
 }
 
 // --- 레시피 불러오기 ---
 async function fetchRecipes() {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('recipes')
     .select('*, ingredients(*)')
     .order('created_at', { ascending: false });
@@ -273,7 +273,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
 
   if (!title) { alert('요리 이름을 입력해주세요!'); return; }
 
-  const { data: recipe, error } = await supabase
+  const { data: recipe, error } = await db
     .from('recipes')
     .insert([{ title, kids_note: note || null }])
     .select()
@@ -286,7 +286,7 @@ document.getElementById('btn-save').addEventListener('click', async () => {
       recipe_id: recipe.id,
       name: name.trim(),
     })).filter(i => i.name);
-    await supabase.from('ingredients').insert(ingList);
+    await db.from('ingredients').insert(ingList);
   }
 
   document.getElementById('input-title').value = '';
@@ -302,7 +302,7 @@ document.getElementById('search-input').addEventListener('input', async (e) => {
 
   if (!text) { resultsEl.innerHTML = ''; return; }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('ingredients')
     .select('name, recipes(*, ingredients(*))')
     .ilike('name', `%${text}%`);
@@ -335,14 +335,14 @@ document.getElementById('search-input').addEventListener('input', async (e) => {
 async function addToShopping(ingredients) {
   if (!ingredients.length) { alert('담을 재료가 없어요'); return; }
   const items = ingredients.map(i => ({ name: i.name }));
-  await supabase.from('shopping_list').insert(items);
+  await db.from('shopping_list').insert(items);
   fetchShoppingList();
   alert('장보기 리스트에 담았어요! 🛒');
 }
 
 // --- 장보기: 불러오기 ---
 async function fetchShoppingList() {
-  const { data, error } = await supabase.from('shopping_list').select('*').order('id');
+  const { data, error } = await db.from('shopping_list').select('*').order('id');
   const listEl = document.getElementById('shopping-list');
   listEl.innerHTML = '';
 
@@ -356,7 +356,7 @@ async function fetchShoppingList() {
     row.className = 'check-row' + (item.is_checked ? ' done' : '');
     row.innerHTML = `<span class="box">${item.is_checked ? '✓' : ''}</span><span class="label">${item.name}</span>`;
     row.addEventListener('click', async () => {
-      await supabase.from('shopping_list').update({ is_checked: !item.is_checked }).eq('id', item.id);
+      await db.from('shopping_list').update({ is_checked: !item.is_checked }).eq('id', item.id);
       fetchShoppingList();
     });
     listEl.appendChild(row);
