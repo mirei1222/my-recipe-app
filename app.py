@@ -69,7 +69,7 @@ try:
         st.markdown("---")
         months = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월(추)", "10월(추)", "11월(추)", "12월(추)"]
 
-        # 1. 판매물량 (숫자 우측 정렬 적용)
+        # 1. 판매물량
         st.markdown("##### 1. 월별 판매물량 현황 및 4분기 목표")
         st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위 : 톤)</div>", unsafe_allow_html=True)
         vol_data = {
@@ -99,7 +99,7 @@ try:
 
         st.markdown("---")
 
-        # 2. 제조원가 (숫자 우측 정렬 적용)
+        # 2. 제조원가
         st.markdown("##### 2. 월별 제조원가 추이")
         st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위 : 원/kg, 백만원)</div>", unsafe_allow_html=True)
         mfg_data = {
@@ -129,7 +129,7 @@ try:
 
         st.markdown("---")
 
-        # 3. 종합 손익계산서 (숫자 우측 정렬 적용)
+        # 3. 종합 손익계산서
         st.markdown("##### 3. 월별 종합 손익계산서 및 추정 경상이익")
         st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위 : 백만원)</div>", unsafe_allow_html=True)
         pnl_data = {
@@ -183,19 +183,19 @@ try:
         st.markdown("##### 1. 모선별 조건 입력표 (수정 및 행 추가 가능)")
         st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위: 톤, U$/톤, 원/$)</div>", unsafe_allow_html=True)
 
-        # 에디터 내 숫자 우측 정렬 명시
+        # SelectboxColumn의 alignment 제거하여 오류 원천 차단
         edited_df = st.data_editor(
             default_vessels,
             key="vessel_editor_tab2",
             num_rows="dynamic",
             use_container_width=True,
             column_config={
-                "품목": st.column_config.SelectboxColumn("품목", options=item_options, required=True, alignment="left"),
-                "모선명": st.column_config.TextColumn("모선명", required=True, alignment="left"),
-                "결제예정월": st.column_config.SelectboxColumn("결제예정월", options=month_options, required=True, alignment="left"),
-                "물량(톤)": st.column_config.NumberColumn("물량(톤)", min_value=0, step=1000, format="%d", alignment="right"),
-                "C&F단가($/톤)": st.column_config.NumberColumn("C&F단가($/톤)", min_value=0.0, step=1.0, format="%.1f", alignment="right"),
-                "적용환율(원/$)": st.column_config.NumberColumn("적용환율(원/$)", min_value=1000.0, step=5.0, format="%.1f", alignment="right"),
+                "품목": st.column_config.SelectboxColumn("품목", options=item_options, required=True),
+                "모선명": st.column_config.TextColumn("모선명", required=True),
+                "결제예정월": st.column_config.SelectboxColumn("결제예정월", options=month_options, required=True),
+                "물량(톤)": st.column_config.NumberColumn("물량(톤)", min_value=0, step=1000, format="%d"),
+                "C&F단가($/톤)": st.column_config.NumberColumn("C&F단가($/톤)", min_value=0.0, step=1.0, format="%.1f"),
+                "적용환율(원/$)": st.column_config.NumberColumn("적용환율(원/$)", min_value=1000.0, step=5.0, format="%.1f"),
             }
         )
 
