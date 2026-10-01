@@ -31,10 +31,10 @@ def load_data():
 def make_right_align_config(df, text_cols):
     config = {}
     for col in df.columns:
-        if col not in text_cols:
-            config[col] = st.column_config.Column(col, alignment="right")
-        else:
+        if col in text_cols:
             config[col] = st.column_config.Column(col, alignment="left")
+        else:
+            config[col] = st.column_config.Column(col, alignment="right")
     return config
 
 st.title("🏛️ 지사 월별 손익·원가 분석 및 수입원료 관리 시스템")
@@ -43,11 +43,12 @@ try:
     df = load_data()
     
     # ----------------------------------------------------
-    # 최상위 4대 탭 구성
+    # 최상위 5대 탭 구성
     # ----------------------------------------------------
-    tab1, tab2, tab3, tab4 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5 = st.tabs([
         "📊 [메인] 2026년 월별 통합 손익보고서",
         "🌾 수입원재료 모선·환율 편집",
+        "🧪 제품 배합비 & 축종별 원료 산출",
         "📈 과거(3개년) 비교 분석",
         "📅 과거 연도별 보고서 조회 ('25/'24/'23)"
     ])
@@ -99,33 +100,67 @@ try:
 
         st.markdown("---")
 
-        # 2. 제조원가
-        st.markdown("##### 2. 월별 제조원가 추이")
-        st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위 : 원/kg, 백만원)</div>", unsafe_allow_html=True)
-        mfg_data = {
-            "구분": ["생산량(톤)", "원료비(원/kg)", "노무비(원/kg)", "수광비/경비(원/kg)", "제조원가 총액(백만원)"],
-            "1월": [43500, 372.1, 10.2, 10.1, 17080], "2월": [42500, 373.0, 10.5, 10.3, 16736],
-            "3월": [44500, 374.2, 10.1, 10.0, 17546], "4월": [43200, 375.0, 10.4, 10.2, 17090],
-            "5월": [42300, 375.5, 10.6, 10.5, 16776], "6월": [44000, 374.8, 10.2, 10.1, 17384],
-            "7월": [41800, 376.0, 10.7, 10.4, 16599], "8월": [40900, 382.2, 10.7, 10.5, 16515],
-            "9월(추)": [43000, 388.0, 10.6, 10.2, 17573], "10월(추)": [49500, 398.5, 10.8, 9.8, 20706],
-            "11월(추)": [49500, 402.0, 10.7, 9.8, 20879], "12월(추)": [49500, 395.0, 12.4, 10.5, 20612],
+        # 2. 제조원가명세서 기준 월별 세부 분석
+        st.markdown("##### 2. 제조원가명세서 기준 월별 원가 세부 분석")
+        st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위 : 톤, 원/kg, 백만원)</div>", unsafe_allow_html=True)
+        
+        mfg_stmt_data = {
+            "제조원가 계목": [
+                "생산량(톤)", 
+                "I. 원료비(원/kg)", 
+                "II. 보조재료비(원/kg)", 
+                "III. 노무비(원/kg)", 
+                "IV. 제조경비(원/kg)", 
+                "   1. 감가비(원/kg)", 
+                "   2. 수광비(원/kg)", 
+                "   3. 기타경비(원/kg)", 
+                "단위당 총원가(원/kg)", 
+                "당기 총제조원가(백만원)"
+            ],
+            "1월": [43500, 372.1, 6.0, 10.2, 10.1, 2.6, 4.2, 3.3, 398.4, 17330],
+            "2월": [42500, 373.0, 6.1, 10.5, 10.3, 2.6, 4.3, 3.4, 399.9, 16996],
+            "3월": [44500, 374.2, 6.0, 10.1, 10.0, 2.5, 4.1, 3.4, 400.3, 17813],
+            "4월": [43200, 375.0, 6.0, 10.4, 10.2, 2.6, 4.2, 3.4, 401.6, 17349],
+            "5월": [42300, 375.5, 6.1, 10.6, 10.5, 2.6, 4.3, 3.6, 402.7, 17034],
+            "6월": [44000, 374.8, 6.0, 10.2, 10.1, 2.5, 4.2, 3.4, 401.1, 17648],
+            "7월": [41800, 376.0, 6.1, 10.7, 10.4, 2.6, 4.5, 3.3, 403.2, 16854],
+            "8월": [40900, 382.2, 6.0, 10.7, 10.5, 2.6, 4.6, 3.3, 409.4, 16744],
+            "9월(추)": [43000, 388.0, 6.0, 10.6, 10.2, 2.5, 4.3, 3.4, 414.8, 17836],
+            "10월(추)": [49500, 398.5, 6.0, 10.8, 9.8, 2.2, 4.1, 3.5, 425.1, 21042],
+            "11월(추)": [49500, 402.0, 6.0, 10.7, 9.8, 2.2, 4.1, 3.5, 428.5, 21211],
+            "12월(추)": [49500, 395.0, 6.0, 12.4, 10.5, 2.2, 4.4, 3.9, 423.9, 20983],
         }
-        df_mfg = pd.DataFrame(mfg_data)
-        df_mfg["2026 연간합계"] = [df_mfg.iloc[0, 1:13].sum(), 384.7, 10.6, 10.2, df_mfg.iloc[4, 1:13].sum()]
-        df_mfg["2026 사업계획"] = [550000, 370.0, 9.8, 9.5, 215000]
-        df_mfg["계획대비 증감"] = df_mfg["2026 연간합계"] - df_mfg["2026 사업계획"]
+        df_mfg_stmt = pd.DataFrame(mfg_stmt_data)
+        
+        df_mfg_stmt["2026 연간합계"] = [
+            df_mfg_stmt.iloc[0, 1:13].sum(),
+            384.7, 6.0, 10.7, 10.2, 2.4, 4.3, 3.5, 411.6,
+            df_mfg_stmt.iloc[9, 1:13].sum()
+        ]
+        df_mfg_stmt["2026 사업계획"] = [550000, 370.0, 6.0, 9.8, 9.5, 2.5, 4.0, 3.0, 395.3, 217415]
+        df_mfg_stmt["계획대비 증감"] = df_mfg_stmt["2026 연간합계"] - df_mfg_stmt["2026 사업계획"]
 
-        fmt_mfg = df_mfg.copy()
-        for col in fmt_mfg.columns[1:]:
-            fmt_mfg[col] = fmt_mfg[col].apply(lambda x: f"{x:,.1f}" if isinstance(x, float) else f"{x:,.0f}")
+        fmt_mfg_stmt = df_mfg_stmt.copy()
+        for col in fmt_mfg_stmt.columns[1:]:
+            fmt_mfg_stmt[col] = fmt_mfg_stmt[col].apply(lambda x: f"{x:,.1f}" if isinstance(x, float) else f"{x:,.0f}")
             
         st.dataframe(
-            fmt_mfg, 
+            fmt_mfg_stmt, 
             use_container_width=True, 
             hide_index=True,
-            column_config=make_right_align_config(fmt_mfg, ["구분"])
+            column_config=make_right_align_config(fmt_mfg_stmt, ["제조원가 계목"])
         )
+
+        st.info("""
+        📌 **제조원가명세서 세부 추정 근거**:
+        * **I. 원료비**: [Tab 2] 모선별 C&F 단가($) 및 환율(원/$) 연동 (10~11월 수입 옥수수/대두박 환율 상승 여파 반영)
+        * **II. 보조재료비**: 비타민, 광물질, 첨가제 및 지대(포장재) 비용 (생산량 연동 톤당 6.0원/kg 고정)
+        * **III. 노무비**: 공장 생산직 인건비 (9~11월은 과거 3개년 평균 + 인상률 3.5% / **12월은 과거 3개년 12월 정기 상여금 및 성과급 정산 반영으로 12.4원/kg**)
+        * **IV. 제조경비**:
+          - **감가비**: 건물, 기계장치 감가상각비 (월 고정비 110백만원 / 4분기 물량증가로 kg당 단가 하락)
+          - **수광비**: 전력비, 동력비 (여름철 7~8월 산업용 전기 피크요금 반영)
+          - **기타경비**: 수선유지비, 소모품비, 안전관리비 (5월/12월 공장 정기점검 보수비 집중 반영)
+        """)
 
         st.markdown("---")
 
@@ -183,7 +218,6 @@ try:
         st.markdown("##### 1. 모선별 조건 입력표 (수정 및 행 추가 가능)")
         st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위: 톤, U$/톤, 원/$)</div>", unsafe_allow_html=True)
 
-        # SelectboxColumn의 alignment 제거하여 오류 원천 차단
         edited_df = st.data_editor(
             default_vessels,
             key="vessel_editor_tab2",
@@ -223,9 +257,103 @@ try:
             )
 
     # ====================================================
-    # TAB 3: 과거(3개년) 비교 분석
+    # TAB 3: [신규] 제품 배합비 & 축종별 원료 산출 시뮬레이터
     # ====================================================
     with tab3:
+        st.subheader("🧪 제품 배합비(BOM) 및 판매량 기반 축종별 수입/국산 원료 자동 계산 엔진")
+        st.caption("제품별 원료 배합비(%)와 판매량(톤)을 수정하면 [배합비 × 판매량] 행렬 계산을 통해 축종별 수입/국산 원료 소모량과 비율이 자동 계산됩니다.")
+
+        col_left, col_right = st.columns([6, 4])
+
+        with col_left:
+            st.markdown("##### 1. 대표 제품별 배합비(BOM) 설정 (%)")
+            default_bom = pd.DataFrame([
+                {"제품명": "양돈_젖떼기01", "축종": "양돈", "수입옥수수(%)": 55.0, "소맥(%)": 5.0, "대두박(%)": 20.0, "수입채종박(%)": 0.0, "수입팜박(%)": 0.0, "수입야자박(%)": 0.0, "국산/기타(%)": 20.0},
+                {"제품명": "양돈_육성02", "축종": "양돈", "수입옥수수(%)": 58.0, "소맥(%)": 0.0, "대두박(%)": 22.0, "수입채종박(%)": 2.0, "수입팜박(%)": 0.0, "수입야자박(%)": 0.0, "국산/기타(%)": 18.0},
+                {"제품명": "양계_산란01", "축종": "양계", "수입옥수수(%)": 60.0, "소맥(%)": 10.0, "대두박(%)": 15.0, "수입채종박(%)": 0.0, "수입팜박(%)": 0.0, "수입야자박(%)": 0.0, "국산/기타(%)": 15.0},
+                {"제품명": "축우_비육01", "축종": "축우", "수입옥수수(%)": 35.0, "소맥(%)": 5.0, "대두박(%)": 10.0, "수입채종박(%)": 5.0, "수입팜박(%)": 10.0, "수입야자박(%)": 10.0, "국산/기타(%)": 25.0},
+                {"제품명": "기타_특수01", "축종": "기타", "수입옥수수(%)": 40.0, "소맥(%)": 10.0, "대두박(%)": 15.0, "수입채종박(%)": 5.0, "수입팜박(%)": 5.0, "수입야자박(%)": 0.0, "국산/기타(%)": 25.0},
+            ])
+
+            edited_bom = st.data_editor(
+                default_bom,
+                key="bom_editor",
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "제품명": st.column_config.TextColumn("제품명", required=True),
+                    "축종": st.column_config.SelectboxColumn("축종", options=["양돈", "양계", "축우", "기타"], required=True),
+                }
+            )
+
+        with col_right:
+            st.markdown("##### 2. 제품별 누계 판매량 입력 (톤)")
+            default_prod_sales = pd.DataFrame([
+                {"제품명": "양돈_젖떼기01", "판매량(톤)": 60000},
+                {"제품명": "양돈_육성02", "판매량(톤)": 83700},
+                {"제품명": "양계_산란01", "판매량(톤)": 97400},
+                {"제품명": "축우_비육01", "판매량(톤)": 86000},
+                {"제품명": "기타_특수01", "판매량(톤)": 16280},
+            ])
+
+            edited_sales = st.data_editor(
+                default_prod_sales,
+                key="sales_editor",
+                num_rows="dynamic",
+                use_container_width=True,
+                column_config={
+                    "제품명": st.column_config.TextColumn("제품명", required=True),
+                    "판매량(톤)": st.column_config.NumberColumn("판매량(톤)", min_value=0, step=1000, format="%d")
+                }
+            )
+
+        # 3. [배합비 x 판매량] 행렬 산출
+        if not edited_bom.empty and not edited_sales.empty:
+            merged_bom = pd.merge(edited_bom, edited_sales, on="제품명", how="inner")
+            
+            # 각 원료별 소모 톤수 계산
+            ing_cols = ["수입옥수수(%)", "소맥(%)", "대두박(%)", "수입채종박(%)", "수입팜박(%)", "수입야자박(%)", "국산/기타(%)"]
+            for col in ing_cols:
+                raw_col_name = col.replace("(%)", "소모량(톤)")
+                merged_bom[raw_col_name] = (merged_bom["판매량(톤)"] * merged_bom[col]) / 100.0
+
+            # 축종별 집계
+            species_group = merged_bom.groupby("축종").sum(numeric_only=True).reset_index()
+
+            # 수입 vs 국산 합산
+            import_cols = [c.replace("(%)", "소모량(톤)") for c in ing_cols[:-1]]
+            species_group["수입원료 소모량(톤)"] = species_group[import_cols].sum(axis=1)
+            species_group["국산원료 소모량(톤)"] = species_group["국산/기타(%)".replace("(%)", "소모량(톤)")]
+            species_group["총 원료사용량(톤)"] = species_group["판매량(톤)"]
+            
+            species_group["수입 비중(%)"] = (species_group["수입원료 소모량(톤)"] / species_group["총 원료사용량(톤)"] * 100).round(1)
+            species_group["국산 비중(%)"] = (species_group["국산원료 소모량(톤)"] / species_group["총 원료사용량(톤)"] * 100).round(1)
+
+            st.markdown("---")
+            st.markdown("##### 3. 🔥 [자동 산출 결과] 축종별 수입/국산 원료 사용량 및 비율 요약")
+            st.markdown("<div style='text-align: right; font-weight: bold; color: #555555; margin-bottom: 5px;'>(단위: 톤, %)</div>", unsafe_allow_html=True)
+
+            res_species = species_group[["축종", "총 원료사용량(톤)", "수입원료 소모량(톤)", "수입 비중(%)", "국산원료 소모량(톤)", "국산 비중(%)"]].copy()
+            
+            # 천단위 콤마 적용
+            fmt_res_species = res_species.copy()
+            fmt_res_species["총 원료사용량(톤)"] = fmt_res_species["총 원료사용량(톤)"].apply(lambda x: f"{x:,.0f}")
+            fmt_res_species["수입원료 소모량(톤)"] = fmt_res_species["수입원료 소모량(톤)"].apply(lambda x: f"{x:,.0f}")
+            fmt_res_species["국산원료 소모량(톤)"] = fmt_res_species["국산원료 소모량(톤)"].apply(lambda x: f"{x:,.0f}")
+            fmt_res_species["수입 비중(%)"] = fmt_res_species["수입 비중(%)"].apply(lambda x: f"{x:.1f}%")
+            fmt_res_species["국산 비중(%)"] = fmt_res_species["국산 비중(%)"].apply(lambda x: f"{x:.1f}%")
+
+            st.dataframe(
+                fmt_res_species,
+                use_container_width=True,
+                hide_index=True,
+                column_config=make_right_align_config(fmt_res_species, ["축종"])
+            )
+
+    # ====================================================
+    # TAB 4: 과거(3개년) 비교 분석
+    # ====================================================
+    with tab4:
         st.subheader("📈 과거 3개년('23~'25) 동월 평균 및 항목별 추이 검증")
         st.caption("12월 상여금, 수광비 정산 등 계절적 변동 항목의 과거 패턴을 분석하고 2026년 추정치에 반영합니다.")
 
@@ -265,9 +393,9 @@ try:
         )
 
     # ====================================================
-    # TAB 4: 과거 연도별 보고서 조회 ('25/'24/'23)
+    # TAB 5: 과거 연도별 보고서 조회 ('25/'24/'23)
     # ====================================================
-    with tab4:
+    with tab5:
         st.subheader("📅 과거 연도별 결산 보고서 조회")
         
         selected_past_year = st.selectbox("조회할 과거 연도 선택", ["2025", "2024", "2023"], index=0)
